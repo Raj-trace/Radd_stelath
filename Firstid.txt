@@ -1,2 +1,3 @@
 hello ,Kites will be short up one
 Security settings can be configured while setup .
+The new technology updated.

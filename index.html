@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>World Countries Map</title>
+  <meta charset="utf-8" />
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+  <style>
+    body {
+      margin: 0;
+    }
+    #map {
+      height: 100vh;
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body>
+
+<div id="map"></div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+  // Create map
+  const map = L.map('map').setView([20, 0], 2);
+
+  // Add base layer
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  // Random color generator for countries
+  function getColor() {
+    const colors = ["#ff4d4d", "#4dff88", "#4da6ff", "#ffd24d", "#b84dff"];
+    return colors[Math.floor(Math.random() * colors.length)];
+  }
+
+  // Style each country
+  function style(feature) {
+    return {
+      fillColor: getColor(),
+      weight: 1,
+      opacity: 1,
+      color: "white",
+      fillOpacity: 0.6
+    };
+  }
+
+  // Highlight on hover
+  function highlightFeature(e) {
+    const layer = e.target;
+    layer.setStyle({
+      weight: 3,
+      color: '#000',
+      fillOpacity: 0.9
+    });
+  }
+
+  function resetHighlight(e) {
+    geojson.resetStyle(e.target);
+  }
+
+  function onEachFeature(feature, layer) {
+    layer.on({
+      mouseover: highlightFeature,
+      mouseout: resetHighlight
+    });
+
+    layer.bindPopup("Country: " + feature.properties.name);
+  }
+
+  // Load world countries GeoJSON
+  let geojson;
+
+  fetch("https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json")
+    .then(res => res.json())
+    .then(data => {
+      geojson = L.geoJson(data, {
+        style: style,
+        onEachFeature: onEachFeature
+      }).addTo(map);
+    });
+
+</script>
+
+</body>
+</html>

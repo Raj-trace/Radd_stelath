@@ -24,20 +24,3 @@ jobs:
 
       - name: Push Docker image
         run: docker push rajesh146/myapp:latest
-
-      - name: Stop old container
-        run: docker stop gallant_dewdney || true
-
-      - name: Remove old container
-        run: docker rm gallant_dewdney || true
-
-      - name: Pull latest image
-        run: docker pull rajesh146/myapp:latest
-
-      - name: Run new container
-        run: |
-          docker run -d \
-            --name gallant_dewdney \
-            -p 9809:80 \
-            --restart always \
-            rajesh146/myapp:latest

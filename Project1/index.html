@@ -1,119 +1,259 @@
+```html
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Ships Race to the Sun</title>
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: linear-gradient(to top, #001d3d, #003566);
-    }
+<meta charset="utf-8">
+<title>Pirate Sun Race</title>
 
-    /* 🌊 Ocean waves effect */
-    .ocean {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      background: repeating-linear-gradient(
-        0deg,
-        #0077b6,
-        #0077b6 10px,
-        #0096c7 10px,
-        #0096c7 20px
-      );
-      opacity: 0.3;
-    }
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
-    /* ☀️ Sun */
-    .sun {
-      position: absolute;
-      top: 50px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100px;
-      height: 100px;
-      background: yellow;
-      border-radius: 50%;
-      box-shadow: 0 0 40px yellow;
-    }
+<style>
+html, body {
+    margin: 0;
+    height: 100%;
+}
 
-    /* 🚢 Ship */
-    .ship {
-      position: absolute;
-      width: 40px;
-      height: 20px;
-      background: brown;
-      border-radius: 5px;
-    }
+#map {
+    width: 100%;
+    height: 100vh;
+}
 
-    .ship::before {
-      content: "";
-      position: absolute;
-      left: 18px;
-      top: -20px;
-      width: 4px;
-      height: 20px;
-      background: white;
-    }
+.ship {
+    font-size: 28px;
+}
 
-    .ship::after {
-      content: "";
-      position: absolute;
-      left: 22px;
-      top: -20px;
-      width: 20px;
-      height: 15px;
-      background: rgba(255,255,255,0.9);
-      clip-path: polygon(0 0, 100% 50%, 0 100%);
-    }
-  </style>
+.winner {
+    font-size: 32px;
+}
+
+.sun {
+    font-size: 40px;
+}
+</style>
 </head>
 
 <body>
 
-<div class="ocean"></div>
-<div class="sun"></div>
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-  const sun = { x: window.innerWidth / 2, y: 100 };
 
-  const ships = [];
+// ==========================
+// MAP
+// ==========================
+const map = L.map('map').setView([20, 0], 2);
 
-  // 🚢 Create multiple ships
-  for (let i = 0; i < 6; i++) {
-    const ship = document.createElement("div");
-    ship.className = "ship";
-    document.body.appendChild(ship);
+L.tileLayer(
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+{
+    attribution: '&copy; OpenStreetMap'
+}).addTo(map);
 
-    ships.push({
-      el: ship,
-      x: Math.random() * window.innerWidth,
-      y: window.innerHeight - 100 - Math.random() * 100,
-      speed: 1 + Math.random() * 2
+// ==========================
+// SUN
+// ==========================
+let sun = {
+    lat: 10,
+    lng: 160
+};
+
+const sunMarker = L.marker(
+[sun.lat, sun.lng],
+{
+    icon: L.divIcon({
+        html: '<div class="sun">☀️</div>',
+        className: '',
+        iconSize: [40,40]
+    })
+}
+).addTo(map);
+
+// ==========================
+// PIRATE NAMES
+// ==========================
+const pirateNames = [
+"Black Pearl",
+"Crimson Kraken",
+"Sea Reaper",
+"Golden Marauder",
+"Shadow Corsair",
+"Storm Phantom",
+"Dark Buccaneer",
+"Ocean Fury",
+"Iron Cutlass",
+"Ghost Tide"
+];
+
+// ==========================
+// START LINE
+// ==========================
+const startLat = -40;
+const startLng = -170;
+
+let raceFinished = false;
+
+// ==========================
+// CREATE SHIPS
+// ==========================
+const ships = pirateNames.map((name,index)=>{
+
+    let ship = {
+        name:name,
+        lat:startLat + (index*5),
+        lng:startLng,
+        speed:0.15 + Math.random()*0.08,
+        winner:false
+    };
+
+    ship.marker = L.marker(
+    [ship.lat, ship.lng],
+    {
+        icon:L.divIcon({
+            html:'<div class="ship">🏴‍☠️⛵</div>',
+            className:'',
+            iconSize:[40,40]
+        })
+    })
+    .addTo(map)
+    .bindPopup(name);
+
+    return ship;
+});
+
+// ==========================
+// DISTANCE
+// ==========================
+function distance(a,b,c,d){
+    return Math.sqrt(
+        Math.pow(c-a,2)+
+        Math.pow(d-b,2)
+    );
+}
+
+// ==========================
+// RESET RACE
+// ==========================
+function resetRace(){
+
+    raceFinished = false;
+
+    ships.forEach((ship,index)=>{
+
+        ship.lat = startLat + (index*5);
+        ship.lng = startLng;
+
+        ship.winner = false;
+
+        ship.marker.setIcon(
+            L.divIcon({
+                html:'<div class="ship">🏴‍☠️⛵</div>',
+                className:'',
+                iconSize:[40,40]
+            })
+        );
+
+        ship.marker.setLatLng([
+            ship.lat,
+            ship.lng
+        ]);
     });
-  }
 
-  // 🎯 Move ships toward the sun
-  function animate() {
-    ships.forEach(s => {
-      const dx = sun.x - s.x;
-      const dy = sun.y - s.y;
+    sun.lat = -20 + Math.random()*60;
+    sun.lng = -150 + Math.random()*300;
 
-      const dist = Math.sqrt(dx * dx + dy * dy);
+    sunMarker.setLatLng([
+        sun.lat,
+        sun.lng
+    ]);
+}
 
-      // normalize direction
-      s.x += (dx / dist) * s.speed;
-      s.y += (dy / dist) * s.speed;
+// ==========================
+// MOVE SHIPS
+// ==========================
+function moveShips(){
 
-      s.el.style.left = s.x + "px";
-      s.el.style.top = s.y + "px";
+    if(raceFinished) return;
+
+    let winners = 0;
+
+    ships.forEach(ship=>{
+
+        let dx = sun.lng - ship.lng;
+        let dy = sun.lat - ship.lat;
+
+        let angle = Math.atan2(dy,dx);
+
+        ship.lng += Math.cos(angle)*ship.speed;
+        ship.lat += Math.sin(angle)*ship.speed;
+
+        ship.marker.setLatLng([
+            ship.lat,
+            ship.lng
+        ]);
+
+        let dist = distance(
+            ship.lat,
+            ship.lng,
+            sun.lat,
+            sun.lng
+        );
+
+        if(dist < 2){
+
+            ship.winner = true;
+
+            ship.marker.setIcon(
+                L.divIcon({
+                    html:'<div class="winner">🚩🏴‍☠️</div>',
+                    className:'',
+                    iconSize:[50,50]
+                })
+            );
+        }
+
+        if(ship.winner){
+            winners++;
+        }
     });
 
-    requestAnimationFrame(animate);
-  }
+    if(winners === ships.length){
 
-  animate();
+        raceFinished = true;
+
+        setTimeout(()=>{
+            resetRace();
+        },5000);
+    }
+}
+
+// ==========================
+// MOVE SUN
+// ==========================
+function moveSun(){
+
+    sun.lng += 0.05;
+
+    if(sun.lng > 180){
+        sun.lng = -180;
+    }
+
+    sunMarker.setLatLng([
+        sun.lat,
+        sun.lng
+    ]);
+}
+
+// ==========================
+// START
+// ==========================
+setInterval(moveShips,100);
+setInterval(moveSun,1000);
+
 </script>
 
 </body>
 </html>
+```

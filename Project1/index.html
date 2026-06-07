@@ -1,218 +1,55 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pirate Sun Race</title>
-
-<style>
-html, body {
-    margin: 0;
-    overflow: hidden;
-    height: 100%;
-    background: linear-gradient(#4da6ff, #0066cc);
-    font-family: Arial, sans-serif;
-}
-
-#ocean {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-}
-
-#sun {
-    position: absolute;
-    font-size: 70px;
-    transition: left 0.2s linear, top 0.2s linear;
-}
-
-.ship {
-    position: absolute;
-    font-size: 42px;
-    transition: transform 0.1s linear;
-}
-
-.name {
-    position: absolute;
-    font-size: 12px;
-    color: white;
-    text-align: center;
-    width: 120px;
-    margin-left: -40px;
-    text-shadow: 1px 1px 2px black;
-}
-
-.winner {
-    font-size: 50px;
-}
-</style>
-</head>
-
-<body>
-
-<div id="ocean">
-    <div id="sun">☀️</div>
-</div>
-
-<script>
-
-const ocean = document.getElementById("ocean");
-const sun = document.getElementById("sun");
-
-const pirateNames = [
-    "Black Pearl",
-    "Sea Reaper",
-    "Crimson Kraken",
-    "Storm Raider",
-    "Golden Cutlass",
-    "Ocean Fury",
-    "Ghost Tide",
-    "Dark Corsair",
-    "Iron Buccaneer",
-    "Shadow Marauder",
-    "Silver Anchor",
-    "Skull Voyager"
+// ------------------------------
+// SHIPS DATA
+// ------------------------------
+const ships = [
+  { name: "MV Ocean Queen", lat: 25, lng: -40, dLat: 0.01, dLng: 0.03 },
+  { name: "SS Atlantic Star", lat: 10, lng: -25, dLat: 0.015, dLng: 0.025 },
+  { name: "MV Pacific Voyager", lat: -15, lng: 150, dLat: 0.02, dLng: -0.02 },
+  { name: "SS Coral Explorer", lat: -30, lng: 120, dLat: 0.01, dLng: 0.03 },
+  { name: "MV Blue Horizon", lat: 35, lng: 140, dLat: -0.01, dLng: -0.03 },
+  { name: "SS Northern Wind", lat: 50, lng: -20, dLat: 0.008, dLng: 0.02 },
+  { name: "MV Eastern Pearl", lat: 5, lng: 80, dLat: 0.012, dLng: 0.018 },
+  { name: "SS Southern Cross", lat: -40, lng: -10, dLat: 0.01, dLng: 0.02 },
+  { name: "MV Neptune Trader", lat: 15, lng: 100, dLat: -0.015, dLng: 0.015 },
+  { name: "SS Global Navigator", lat: -5, lng: -120, dLat: 0.02, dLng: 0.01 }
 ];
 
-const shipCount = 8;
-
-let ships = [];
-let raceFinished = false;
-
-function randomSunPosition() {
-    return {
-        x: 300 + Math.random() * (window.innerWidth - 500),
-        y: 50 + Math.random() * 250
-    };
-}
-
-let sunPos = randomSunPosition();
-
-function placeSun() {
-    sun.style.left = sunPos.x + "px";
-    sun.style.top = sunPos.y + "px";
-}
-
-placeSun();
-
-function createShips() {
-
-    for (let i = 0; i < shipCount; i++) {
-
-        const ship = document.createElement("div");
-        ship.className = "ship";
-        ship.innerHTML = "⛵";
-
-        const label = document.createElement("div");
-        label.className = "name";
-        label.innerText =
-            pirateNames[Math.floor(Math.random() * pirateNames.length)];
-
-        ocean.appendChild(ship);
-        ocean.appendChild(label);
-
-        ships.push({
-            element: ship,
-            label: label,
-            name: label.innerText,
-            x: 50,
-            y: window.innerHeight - 120 - (i * 60),
-            speed: 1 + Math.random() * 1.5,
-            winner: false
-        });
-    }
-
-    resetShips();
-}
-
-function resetShips() {
-
-    raceFinished = false;
-
-    ships.forEach((ship, index) => {
-
-        ship.x = 50;
-        ship.y = window.innerHeight - 120 - (index * 60);
-        ship.winner = false;
-
-        ship.element.innerHTML = "⛵";
-        ship.element.className = "ship";
-
-        updateShip(ship);
-    });
-
-    sunPos = randomSunPosition();
-    placeSun();
-}
-
-function updateShip(ship) {
-
-    ship.element.style.left = ship.x + "px";
-    ship.element.style.top = ship.y + "px";
-
-    ship.label.style.left = ship.x + "px";
-    ship.label.style.top = (ship.y - 18) + "px";
-}
-
-function moveShips() {
-
-    if (raceFinished) return;
-
-    let winners = 0;
-
-    ships.forEach(ship => {
-
-        if (ship.winner) {
-            winners++;
-            return;
-        }
-
-        let dx = sunPos.x - ship.x;
-        let dy = sunPos.y - ship.y;
-
-        let distance = Math.hypot(dx, dy);
-
-        if (distance < 20) {
-
-            ship.winner = true;
-            ship.element.innerHTML = "🚩⛵";
-            ship.element.classList.add("winner");
-
-            winners++;
-            return;
-        }
-
-        ship.x += (dx / distance) * ship.speed;
-        ship.y += (dy / distance) * ship.speed;
-
-        updateShip(ship);
-    });
-
-    if (winners === ships.length) {
-
-        raceFinished = true;
-
-        setTimeout(() => {
-            resetShips();
-        }, 4000);
-    }
-}
-
-function animate() {
-
-    moveShips();
-
-    requestAnimationFrame(animate);
-}
-
-createShips();
-animate();
-
-window.addEventListener("resize", () => {
-    resetShips();
+// Ship emoji icon
+const shipIcon = L.divIcon({
+  html: "🚢",
+  className: "",
+  iconSize: [25, 25]
 });
 
-</script>
+// Create markers
+ships.forEach(ship => {
+  ship.marker = L.marker([ship.lat, ship.lng], {
+    icon: shipIcon
+  })
+  .addTo(map)
+  .bindPopup(`<b>${ship.name}</b>`);
+});
 
-</body>
-</html>
+// ------------------------------
+// ENDLESS MOVEMENT LOOP
+// ------------------------------
+function moveShips() {
+  ships.forEach(ship => {
+
+    ship.lat += ship.dLat;
+    ship.lng += ship.dLng;
+
+    // World wrap-around
+    if (ship.lng > 180) ship.lng = -180;
+    if (ship.lng < -180) ship.lng = 180;
+
+    if (ship.lat > 75 || ship.lat < -75) {
+      ship.dLat *= -1;
+    }
+
+    ship.marker.setLatLng([ship.lat, ship.lng]);
+  });
+}
+
+// Slow realistic movement
+setInterval(moveShips, 300);

@@ -1,55 +1,281 @@
-// ------------------------------
-// SHIPS DATA
-// ------------------------------
-const ships = [
-  { name: "MV Ocean Queen", lat: 25, lng: -40, dLat: 0.01, dLng: 0.03 },
-  { name: "SS Atlantic Star", lat: 10, lng: -25, dLat: 0.015, dLng: 0.025 },
-  { name: "MV Pacific Voyager", lat: -15, lng: 150, dLat: 0.02, dLng: -0.02 },
-  { name: "SS Coral Explorer", lat: -30, lng: 120, dLat: 0.01, dLng: 0.03 },
-  { name: "MV Blue Horizon", lat: 35, lng: 140, dLat: -0.01, dLng: -0.03 },
-  { name: "SS Northern Wind", lat: 50, lng: -20, dLat: 0.008, dLng: 0.02 },
-  { name: "MV Eastern Pearl", lat: 5, lng: 80, dLat: 0.012, dLng: 0.018 },
-  { name: "SS Southern Cross", lat: -40, lng: -10, dLat: 0.01, dLng: 0.02 },
-  { name: "MV Neptune Trader", lat: 15, lng: 100, dLat: -0.015, dLng: 0.015 },
-  { name: "SS Global Navigator", lat: -5, lng: -120, dLat: 0.02, dLng: 0.01 }
-];
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pirate Sun Race - Waves & Collision</title>
 
-// Ship emoji icon
-const shipIcon = L.divIcon({
-  html: "🚢",
-  className: "",
-  iconSize: [25, 25]
-});
-
-// Create markers
-ships.forEach(ship => {
-  ship.marker = L.marker([ship.lat, ship.lng], {
-    icon: shipIcon
-  })
-  .addTo(map)
-  .bindPopup(`<b>${ship.name}</b>`);
-});
-
-// ------------------------------
-// ENDLESS MOVEMENT LOOP
-// ------------------------------
-function moveShips() {
-  ships.forEach(ship => {
-
-    ship.lat += ship.dLat;
-    ship.lng += ship.dLng;
-
-    // World wrap-around
-    if (ship.lng > 180) ship.lng = -180;
-    if (ship.lng < -180) ship.lng = 180;
-
-    if (ship.lat > 75 || ship.lat < -75) {
-      ship.dLat *= -1;
-    }
-
-    ship.marker.setLatLng([ship.lat, ship.lng]);
-  });
+<style>
+html, body {
+    margin: 0;
+    overflow: hidden;
+    height: 100%;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(#4da6ff, #0066cc);
 }
 
-// Slow realistic movement
-setInterval(moveShips, 300);
+/* OCEAN */
+#ocean {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* SUN */
+#sun {
+    position: absolute;
+    font-size: 70px;
+}
+
+/* SHIPS */
+.ship {
+    position: absolute;
+    font-size: 42px;
+}
+
+.name {
+    position: absolute;
+    font-size: 12px;
+    color: white;
+    text-align: center;
+    width: 120px;
+    margin-left: -40px;
+    text-shadow: 1px 1px 2px black;
+}
+
+.winner {
+    font-size: 50px;
+}
+
+/* 🌊 WAVES */
+#waves {
+    position: absolute;
+    width: 200%;
+    height: 140px;
+    bottom: 0;
+    left: 0;
+    pointer-events: none;
+}
+
+.wave {
+    position: absolute;
+    bottom: 0;
+    width: 200%;
+    height: 120px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 100%;
+    animation: waveMove 8s linear infinite;
+}
+
+.wave:nth-child(2) {
+    opacity: 0.25;
+    animation-duration: 12s;
+    bottom: 10px;
+}
+
+.wave:nth-child(3) {
+    opacity: 0.15;
+    animation-duration: 16s;
+    bottom: 20px;
+}
+
+@keyframes waveMove {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+/* 💥 SPLASH */
+.splash {
+    position: absolute;
+    font-size: 30px;
+    animation: splashAnim 0.6s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes splashAnim {
+    0% { transform: scale(0.5); opacity: 1; }
+    100% { transform: scale(2); opacity: 0; }
+}
+</style>
+</head>
+
+<body>
+
+<div id="ocean">
+
+    <!-- WAVES -->
+    <div id="waves">
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+    </div>
+
+    <div id="sun">☀️</div>
+</div>
+
+<script>
+
+const ocean = document.getElementById("ocean");
+const sun = document.getElementById("sun");
+
+const pirateNames = [
+"Black Pearl","Sea Reaper","Crimson Kraken","Storm Raider",
+"Golden Cutlass","Ocean Fury","Ghost Tide","Dark Corsair",
+"Iron Buccaneer","Shadow Marauder","Silver Anchor","Skull Voyager"
+];
+
+const shipCount = 8;
+
+let ships = [];
+let raceFinished = false;
+
+let sunPos = randomSun();
+
+function randomSun() {
+    return {
+        x: 200 + Math.random() * (window.innerWidth - 400),
+        y: 80 + Math.random() * 200
+    };
+}
+
+placeSun();
+
+function placeSun() {
+    sun.style.left = sunPos.x + "px";
+    sun.style.top = sunPos.y + "px";
+}
+
+/* 💥 SPLASH EFFECT */
+function createSplash(x, y) {
+    const splash = document.createElement("div");
+    splash.className = "splash";
+    splash.innerHTML = "💥";
+    splash.style.left = x + "px";
+    splash.style.top = y + "px";
+    ocean.appendChild(splash);
+
+    setTimeout(() => splash.remove(), 600);
+}
+
+/* CREATE SHIPS */
+function createShips() {
+
+    for (let i = 0; i < shipCount; i++) {
+
+        const ship = document.createElement("div");
+        ship.className = "ship";
+        ship.innerHTML = "⛵";
+
+        const label = document.createElement("div");
+        label.className = "name";
+        label.innerText =
+            pirateNames[Math.floor(Math.random() * pirateNames.length)];
+
+        ocean.appendChild(ship);
+        ocean.appendChild(label);
+
+        ships.push({
+            element: ship,
+            label: label,
+            x: 50,
+            y: window.innerHeight - 120 - (i * 60),
+            speed: 1 + Math.random() * 1.5,
+            winner: false
+        });
+    }
+
+    resetShips();
+}
+
+/* RESET */
+function resetShips() {
+
+    raceFinished = false;
+
+    ships.forEach((ship, i) => {
+
+        ship.x = 50;
+        ship.y = window.innerHeight - 120 - (i * 60);
+        ship.winner = false;
+
+        ship.element.innerHTML = "⛵";
+        ship.element.className = "ship";
+
+        updateShip(ship);
+    });
+
+    sunPos = randomSun();
+    placeSun();
+}
+
+/* UPDATE */
+function updateShip(ship) {
+    ship.element.style.left = ship.x + "px";
+    ship.element.style.top = ship.y + "px";
+
+    ship.label.style.left = ship.x + "px";
+    ship.label.style.top = (ship.y - 18) + "px";
+}
+
+/* MOVE SHIPS */
+function moveShips() {
+
+    if (raceFinished) return;
+
+    let winners = 0;
+
+    ships.forEach(ship => {
+
+        if (ship.winner) {
+            winners++;
+            return;
+        }
+
+        let dx = sunPos.x - ship.x;
+        let dy = sunPos.y - ship.y;
+        let distance = Math.hypot(dx, dy);
+
+        /* 💥 COLLISION */
+        if (distance < 25) {
+
+            ship.winner = true;
+            ship.element.innerHTML = "🚩⛵";
+            ship.element.classList.add("winner");
+
+            createSplash(ship.x, ship.y);
+
+            winners++;
+            return;
+        }
+
+        /* MOVE */
+        if (distance > 0) {
+            ship.x += (dx / distance) * ship.speed;
+            ship.y += (dy / distance) * ship.speed;
+        }
+
+        updateShip(ship);
+    });
+
+    if (winners === ships.length) {
+        raceFinished = true;
+        setTimeout(resetShips, 4000);
+    }
+}
+
+/* LOOP */
+function animate() {
+    moveShips();
+    requestAnimationFrame(animate);
+}
+
+createShips();
+animate();
+
+window.addEventListener("resize", resetShips);
+
+</script>
+
+</body>
+</html>

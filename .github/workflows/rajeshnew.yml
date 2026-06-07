@@ -1,26 +1,36 @@
 name: Docker Deploy_1
 
 on:
-  push:
-    branches:
-      - main
+push:
+branches:
+- main
 
 jobs:
-  build-deploy:
-    runs-on: ubuntu-latest
+build-deploy:
+runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+```
+steps:
+  - name: Checkout code
+    uses: actions/checkout@v4
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+  - name: Login to Docker Hub
+    uses: docker/login-action@v3
+    with:
+      username: ${{ secrets.DOCKER_USERNAME }}
+      password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build Docker image
-        run: docker build -t rajesh146/myapp:latest .
+  # Root project
+  - name: Build MyApp Image
+    run: docker build -t rajesh146/myapp:latest .
 
-      - name: Push Docker image
-        run: docker push rajesh146/myapp:latest
+  - name: Push MyApp Image
+    run: docker push rajesh146/myapp:latest
+
+  # Project1 folder
+  - name: Build Pirates Image
+    run: docker build -t rajesh146/pirates:latest ./Project1
+
+  - name: Push Pirates Image
+    run: docker push rajesh146/pirates:latest
+```

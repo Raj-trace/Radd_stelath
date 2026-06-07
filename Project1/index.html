@@ -1,119 +1,55 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Ships Race to the Sun</title>
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: linear-gradient(to top, #001d3d, #003566);
+// ------------------------------
+// SHIPS DATA
+// ------------------------------
+const ships = [
+  { name: "MV Ocean Queen", lat: 25, lng: -40, dLat: 0.01, dLng: 0.03 },
+  { name: "SS Atlantic Star", lat: 10, lng: -25, dLat: 0.015, dLng: 0.025 },
+  { name: "MV Pacific Voyager", lat: -15, lng: 150, dLat: 0.02, dLng: -0.02 },
+  { name: "SS Coral Explorer", lat: -30, lng: 120, dLat: 0.01, dLng: 0.03 },
+  { name: "MV Blue Horizon", lat: 35, lng: 140, dLat: -0.01, dLng: -0.03 },
+  { name: "SS Northern Wind", lat: 50, lng: -20, dLat: 0.008, dLng: 0.02 },
+  { name: "MV Eastern Pearl", lat: 5, lng: 80, dLat: 0.012, dLng: 0.018 },
+  { name: "SS Southern Cross", lat: -40, lng: -10, dLat: 0.01, dLng: 0.02 },
+  { name: "MV Neptune Trader", lat: 15, lng: 100, dLat: -0.015, dLng: 0.015 },
+  { name: "SS Global Navigator", lat: -5, lng: -120, dLat: 0.02, dLng: 0.01 }
+];
+
+// Ship emoji icon
+const shipIcon = L.divIcon({
+  html: "🚢",
+  className: "",
+  iconSize: [25, 25]
+});
+
+// Create markers
+ships.forEach(ship => {
+  ship.marker = L.marker([ship.lat, ship.lng], {
+    icon: shipIcon
+  })
+  .addTo(map)
+  .bindPopup(`<b>${ship.name}</b>`);
+});
+
+// ------------------------------
+// ENDLESS MOVEMENT LOOP
+// ------------------------------
+function moveShips() {
+  ships.forEach(ship => {
+
+    ship.lat += ship.dLat;
+    ship.lng += ship.dLng;
+
+    // World wrap-around
+    if (ship.lng > 180) ship.lng = -180;
+    if (ship.lng < -180) ship.lng = 180;
+
+    if (ship.lat > 75 || ship.lat < -75) {
+      ship.dLat *= -1;
     }
 
-    /* 🌊 Ocean waves effect */
-    .ocean {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      background: repeating-linear-gradient(
-        0deg,
-        #0077b6,
-        #0077b6 10px,
-        #0096c7 10px,
-        #0096c7 20px
-      );
-      opacity: 0.3;
-    }
+    ship.marker.setLatLng([ship.lat, ship.lng]);
+  });
+}
 
-    /* ☀️ Sun */
-    .sun {
-      position: absolute;
-      top: 50px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100px;
-      height: 100px;
-      background: yellow;
-      border-radius: 50%;
-      box-shadow: 0 0 40px rgb(38, 0, 255);
-    }
-
-    /* 🚢 Ship */
-    .ship {
-      position: absolute;
-      width: 40px;
-      height: 20px;
-      background: brown;
-      border-radius: 5px;
-    }
-
-    .ship::before {
-      content: "";
-      position: absolute;
-      left: 18px;
-      top: -20px;
-      width: 4px;
-      height: 20px;
-      background: white;
-    }
-
-    .ship::after {
-      content: "";
-      position: absolute;
-      left: 22px;
-      top: -20px;
-      width: 20px;
-      height: 15px;
-      background: rgba(255,255,255,0.9);
-      clip-path: polygon(0 0, 100% 50%, 0 100%);
-    }
-  </style>
-</head>
-
-<body>
-
-<div class="ocean"></div>
-<div class="sun"></div>
-
-<script>
-  const sun = { x: window.innerWidth / 2, y: 100 };
-
-  const ships = [];
-
-  // 🚢 Create multiple ships
-  for (let i = 0; i < 6; i++) {
-    const ship = document.createElement("div");
-    ship.className = "ship";
-    document.body.appendChild(ship);
-
-    ships.push({
-      el: ship,
-      x: Math.random() * window.innerWidth,
-      y: window.innerHeight - 100 - Math.random() * 100,
-      speed: 1 + Math.random() * 2
-    });
-  }
-
-  // 🎯 Move ships toward the sun
-  function animate() {
-    ships.forEach(s => {
-      const dx = sun.x - s.x;
-      const dy = sun.y - s.y;
-
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      // normalize direction
-      s.x += (dx / dist) * s.speed;
-      s.y += (dy / dist) * s.speed;
-
-      s.el.style.left = s.x + "px";
-      s.el.style.top = s.y + "px";
-    });
-
-    requestAnimationFrame(animate);
-  }
-
-  animate();
-</script>
-
-</body>
-</html>
+// Slow realistic movement
+setInterval(moveShips, 300);
